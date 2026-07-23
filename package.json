@@ -1,0 +1,9 @@
+{
+  "name": "novatech-hrflow",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node services/api-gateway/src/index.js",
+    "test": "echo 'No tests yet' && exit 0"
+  }
+}
