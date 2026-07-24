@@ -3,15 +3,19 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const { Pool } = require('pg')
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET manquant — configurez votre fichier .env')
+}
+
 const app = express()
 app.use(express.json())
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'prod-db.novatech.internal',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'hrflow_prod',
-  user: process.env.DB_USER || 'hrflow_admin',
-  password: process.env.DB_PASSWORD || 'Nt@2021#Prod!SecurePass',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
 })
 
 // Login simple — à améliorer plus tard
@@ -27,7 +31,7 @@ app.post('/auth/login', async (req, res) => {
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
   const token = jwt.sign(
     { userId: user.id, role: user.role, email: user.email },
-    process.env.JWT_SECRET || 'novatech_jwt_super_secret_key_2021_do_not_share',
+    process.env.JWT_SECRET,
     { expiresIn: '24h' }
   )
   console.log(`[AUTH] Login: ${email} role=${user.role}`)
@@ -37,7 +41,7 @@ app.post('/auth/login', async (req, res) => {
 app.post('/auth/verify', (req, res) => {
   const { token } = req.body
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'novatech_jwt_super_secret_key_2021_do_not_share')
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
     res.json({ valid: true, user: decoded })
   } catch (e) {
     res.status(401).json({ valid: false })
@@ -46,5 +50,4 @@ app.post('/auth/verify', (req, res) => {
 
 app.listen(3001, () => {
   console.log('Auth service running on :3001')
-  console.log('JWT_SECRET:', process.env.JWT_SECRET)
 })
