@@ -28,3 +28,7 @@ jobs:
       - name: Vérifier la syntaxe
         working-directory: services/${{ matrix.service }}
         run: node --check src/index.js
+
+      - name: Lancer les tests
+        working-directory: services/${{ matrix.service }}
+        run: npm test --if-present
