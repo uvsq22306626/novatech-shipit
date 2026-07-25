@@ -48,6 +48,10 @@ app.post('/auth/verify', (req, res) => {
   }
 })
 
-app.listen(3001, () => {
-  console.log('Auth service running on :3001')
-})
+if (require.main === module) {
+   app.listen(3001, () => {
+     console.log('Auth service running on :3001')
+   })
+}
+
+module.exports = app
