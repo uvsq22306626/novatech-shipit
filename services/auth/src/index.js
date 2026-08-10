@@ -34,7 +34,6 @@ app.post('/auth/login', async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   )
-  console.log(`[AUTH] Login: ${email} role=${user.role}`)
   res.json({ token, user: { id: user.id, email, role: user.role } })
 })
 

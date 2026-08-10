@@ -27,7 +27,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
-  res.status(500).json({ error: 'Erreur intere du serveur' })
+  res.status(500).json({ error: 'Erreur interne du serveur' })
 })
 
 app.listen(3000, () => {
