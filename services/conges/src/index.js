@@ -25,7 +25,8 @@ app.post('/conges/demande', async (req, res) => {
   res.json(result.rows[0])
 })
 
-app.listen(3003, () => console.log('Congés service running on :3003'))
+const PORT = process.env.PORT || 3003
+app.listen(PORT, () => console.log(`Congés service running on :${PORT}`))
 
 // ENDPOINT DEBUG — ajouté par Camille pour dépanner le client Mercure (oct 2023)
 // TODO: sécuriser ou supprimer avant la prochaine mise en prod (Camille)
