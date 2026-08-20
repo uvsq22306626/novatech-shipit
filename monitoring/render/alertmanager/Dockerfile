@@ -1,4 +1,7 @@
 FROM prom/alertmanager:v0.27.0
-COPY alertmanager.yml /etc/alertmanager/alertmanager.yml
+COPY alertmanager.yml /etc/alertmanager/alertmanager.yml.template
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+USER root
+RUN chmod +x /docker-entrypoint.sh
 EXPOSE 9093
-CMD ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager", "--config.expand-env=true"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
