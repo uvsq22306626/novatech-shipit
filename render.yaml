@@ -97,15 +97,15 @@ services:
     envVars:
       - fromGroup: hrflow-shared
       - key: ALLOWED_ORIGINS
-        value: https://novatech-shipit-frontend-dev.onrender.com
+        value: https://novatech-shipit-frontend-dev-4xk1.onrender.com
       - key: AUTH_SERVICE_URL
-        value: https://novatech-shipit-auth-dev.onrender.com
+        value: https://novatech-shipit-auth-dev-4xk1.onrender.com
       - key: PAIE_SERVICE_URL
-        value: https://novatech-shipit-paie-dev.onrender.com
+        value: https://novatech-shipit-paie-dev-4xk1.onrender.com
       - key: CONGES_SERVICE_URL
-        value: https://novatech-shipit-conges-dev.onrender.com
+        value: https://novatech-shipit-conges-dev-4xk1.onrender.com
       - key: RECRUTEMENT_SERVICE_URL
-        value: https://novatech-shipit-recrutement-dev.onrender.com
+        value: https://novatech-shipit-recrutement-dev-4xk1.onrender.com
 
   - type: web
     name: novatech-shipit-frontend-dev
@@ -116,4 +116,20 @@ services:
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://novatech-shipit-api-gateway-dev.onrender.com/api
+        value: https://novatech-shipit-api-gateway-dev-4xk1.onrender.com/api
+
+  - type: web
+    name: novatech-shipit-prometheus-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/prometheus
+
+  - type: web
+    name: novatech-shipit-grafana-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/grafana
