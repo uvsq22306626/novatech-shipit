@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hrflow}
+      POSTGRES_USER: ${DB_USER:-hrflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-hrflow_dev_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hrflow} -d ${DB_NAME:-hrflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hrflow-network
+
+  auth:
+    build: ./services/auth
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-hrflow}
+      DB_USER: ${DB_USER:-hrflow}
+      DB_PASSWORD: ${DB_PASSWORD:-hrflow_dev_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hrflow-network
+
+  paie:
+    build: ./services/paie
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${DB_USER:-hrflow}:${DB_PASSWORD:-hrflow_dev_password}@postgres:5432/${DB_NAME:-hrflow}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_dummy}
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hrflow-network
+
+  conges:
+    build: ./services/conges
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${DB_USER:-hrflow}:${DB_PASSWORD:-hrflow_dev_password}@postgres:5432/${DB_NAME:-hrflow}
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hrflow-network
+
+  recrutement:
+    build: ./services/recrutement
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${DB_USER:-hrflow}:${DB_PASSWORD:-hrflow_dev_password}@postgres:5432/${DB_NAME:-hrflow}
+      MOCK_DB: ${MOCK_DB:-false}
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hrflow-network
+
+  api-gateway:
+    build: ./services/api-gateway
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      AUTH_SERVICE_URL: http://auth:3001
+      PAIE_SERVICE_URL: http://paie:3002
+      CONGES_SERVICE_URL: http://conges:3003
+      RECRUTEMENT_SERVICE_URL: http://recrutement:3004
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth
+      - paie
+      - conges
+      - recrutement
+    networks:
+      - hrflow-network
+
+volumes:
+  pgdata:
+
+networks:
+  hrflow-network:
+    driver: bridge
