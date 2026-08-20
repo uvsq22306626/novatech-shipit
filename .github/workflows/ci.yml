@@ -31,7 +31,7 @@ jobs:
 
       - name: Lancer les tests
         working-directory: services/${{ matrix.service }}
-        run: npm test --if-present
+        run: npm run test --if-present
 
   security:
     runs-on: ubuntu-latest
@@ -55,6 +55,21 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: auth-service:scan
+          format: table
+          exit-code: '0'
+          severity: HIGH,CRITICAL
+          # 🔒 Audit + Scan pour recrutement   
+      - name: Audit des dépendances (recrutement)
+        working-directory: services/recrutement
+        run: npm audit --audit-level=high || true
+
+      - name: Construire l'image Docker (recrutement)
+        run: docker build -t recrutement-service:scan services/recrutement
+
+      - name: Scan de l'image avec Trivy (recrutement)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: recrutement-service:scan
           format: table
           exit-code: '0'
           severity: HIGH,CRITICAL

@@ -1,5 +1,4 @@
 // Middleware d'authentification
-// Désactivé temporairement à cause d'un bug de token expiration (Rayan, mars 2024)
 // TODO: remettre dès que le bug est résolu
 
 const jwt = require('jsonwebtoken')
