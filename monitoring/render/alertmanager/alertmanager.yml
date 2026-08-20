@@ -1,6 +1,6 @@
 global:
   resolve_timeout: 5m
-  slack_api_url: 'https://hooks.slack.com/services/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'
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
 
 templates:
   - '/etc/alertmanager/templates/*.tmpl'
@@ -13,6 +13,7 @@ route:
   receiver: 'slack-warning'
 
   routes:
+    # P1 — réveille l'astreinte immédiatement
     - matchers:
         - severity = "p1"
       receiver: 'slack-p1'
@@ -20,6 +21,7 @@ route:
       repeat_interval: 15m
       continue: false
 
+    # Critical — canal #alertes-critiques
     - matchers:
         - severity = "critical"
       receiver: 'slack-critical'
@@ -27,6 +29,7 @@ route:
       repeat_interval: 1h
       continue: false
 
+    # Warning — canal #alertes-warning
     - matchers:
         - severity = "warning"
       receiver: 'slack-warning'
@@ -38,7 +41,7 @@ receivers:
       - channel: '#astreinte-p1'
         username: 'AlertManager NovaTech'
         icon_emoji: ':rotating_light:'
-        title: '[P1] INCIDENT CRITIQUE — {{ .GroupLabels.alertname }}'
+        title: '[P1] 🚨 INCIDENT CRITIQUE — {{ .GroupLabels.alertname }}'
         text: |
           *Service :* {{ range .Alerts }}{{ .Labels.job }}{{ end }}
           *Résumé :* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}

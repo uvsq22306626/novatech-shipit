@@ -119,6 +119,17 @@ services:
         value: https://novatech-shipit-api-gateway-dev-4xk1.onrender.com/api
 
   - type: web
+    name: novatech-shipit-alertmanager-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/alertmanager
+    envVars:
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+
+  - type: web
     name: novatech-shipit-prometheus-dev
     runtime: docker
     plan: free
