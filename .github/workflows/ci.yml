@@ -3,15 +3,18 @@ name: CI
 on:
   push:
     branches: [main]
+
   pull_request:
     branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         service: [auth, api-gateway, paie, conges, recrutement]
+
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
@@ -22,19 +25,34 @@ jobs:
           node-version: '20'
 
       - name: Installer les dépendances
+        if: matrix.service != 'conges'
         working-directory: services/${{ matrix.service }}
         run: npm install
+
+      - name: Installer les dépendances Congés
+        if: matrix.service == 'conges'
+        working-directory: services/conges
+        run: npm ci
 
       - name: Vérifier la syntaxe
         working-directory: services/${{ matrix.service }}
         run: node --check src/index.js
 
       - name: Lancer les tests
+        if: matrix.service != 'conges'
         working-directory: services/${{ matrix.service }}
         run: npm run test --if-present
 
+      - name: Tests et coverage Congés
+        if: matrix.service == 'conges'
+        working-directory: services/conges
+        run: |
+          npm test
+          npm run test:coverage
+
   security:
     runs-on: ubuntu-latest
+
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
@@ -58,7 +76,7 @@ jobs:
           format: table
           exit-code: '0'
           severity: HIGH,CRITICAL
-          # 🔒 Audit + Scan pour recrutement   
+
       - name: Audit des dépendances (recrutement)
         working-directory: services/recrutement
         run: npm audit --audit-level=high || true

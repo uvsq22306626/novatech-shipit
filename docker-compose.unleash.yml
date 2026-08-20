@@ -1,0 +1,61 @@
+services:
+  app-db:
+    image: postgres:16-alpine
+    container_name: novatech-app-db
+
+    environment:
+      POSTGRES_DB: novatech
+      POSTGRES_USER: novatech
+      POSTGRES_PASSWORD: novatech
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - novatech-app-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novatech -d novatech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  unleash-db:
+    image: postgres:16-alpine
+    container_name: novatech-unleash-db
+
+    environment:
+      POSTGRES_DB: unleash
+      POSTGRES_USER: unleash
+      POSTGRES_PASSWORD: unleash
+
+    volumes:
+      - unleash-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unleash -d unleash"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  unleash:
+    image: unleashorg/unleash-server:latest
+    container_name: novatech-unleash
+
+    ports:
+      - "4242:4242"
+
+    environment:
+      DATABASE_HOST: unleash-db
+      DATABASE_NAME: unleash
+      DATABASE_USERNAME: unleash
+      DATABASE_PASSWORD: unleash
+      DATABASE_SSL: "false"
+
+    depends_on:
+      unleash-db:
+        condition: service_healthy
+
+volumes:
+  unleash-data:
+  novatech-app-data:
