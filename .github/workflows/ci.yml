@@ -1,93 +1,56 @@
 name: CI
-
 on:
   push:
     branches: [main]
-
   pull_request:
     branches: [main]
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         service: [auth, api-gateway, paie, conges, recrutement]
-
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
-
       - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Installer les dépendances
-        if: matrix.service != 'conges'
         working-directory: services/${{ matrix.service }}
         run: npm install
-
-      - name: Installer les dépendances Congés
-        if: matrix.service == 'conges'
-        working-directory: services/conges
-        run: npm ci
-
       - name: Vérifier la syntaxe
         working-directory: services/${{ matrix.service }}
         run: node --check src/index.js
-
       - name: Lancer les tests
-        if: matrix.service != 'conges'
         working-directory: services/${{ matrix.service }}
         run: npm run test --if-present
-
-      - name: Tests et coverage Congés
-        if: matrix.service == 'conges'
-        working-directory: services/conges
-        run: |
-          npm test
-          npm run test:coverage
+      - name: Couverture de tests
+        working-directory: services/${{ matrix.service }}
+        run: npm run test:coverage --if-present
 
   security:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        service: [auth, api-gateway, paie, conges, recrutement]
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
-
       - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Audit des dépendances (auth)
-        working-directory: services/auth
+      - name: Audit des dépendances
+        working-directory: services/${{ matrix.service }}
         run: npm audit --audit-level=high || true
-
-      - name: Construire l'image Docker (auth)
-        run: docker build -t auth-service:scan services/auth
-
+      - name: Construire l'image Docker
+        run: docker build -t ${{ matrix.service }}-service:scan services/${{ matrix.service }}
       - name: Scan de l'image avec Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: auth-service:scan
-          format: table
-          exit-code: '0'
-          severity: HIGH,CRITICAL
-
-      - name: Audit des dépendances (recrutement)
-        working-directory: services/recrutement
-        run: npm audit --audit-level=high || true
-
-      - name: Construire l'image Docker (recrutement)
-        run: docker build -t recrutement-service:scan services/recrutement
-
-      - name: Scan de l'image avec Trivy (recrutement)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: recrutement-service:scan
+          image-ref: ${{ matrix.service }}-service:scan
           format: table
           exit-code: '0'
           severity: HIGH,CRITICAL
