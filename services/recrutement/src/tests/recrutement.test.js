@@ -101,3 +101,85 @@ test('refuse une mise à jour avec statut vide', async () => {
   expect(res.body.error).toBeDefined()
 })
 
+test('refuse une candidature avec un email invalide', async () => {
+  const res = await request(app)
+    .post('/recrutement/candidat')
+    .field('nom', 'Alice')
+    .field('prenom', 'Dupont')
+    .field('email', 'email-invalide')
+    .field('poste', 'Dev')
+    .attach(
+      'cv',
+      Buffer.from('fake pdf content'),
+      {
+        filename: 'cv.pdf',
+        contentType: 'application/pdf'
+      }
+    )
+
+  expect(res.status).toBe(400)
+  expect(res.body.error).toBe('email invalide')
+})
+
+test('refuse un CV qui n’est pas un PDF', async () => {
+  const res = await request(app)
+    .post('/recrutement/candidat')
+    .field('nom', 'Alice')
+    .field('prenom', 'Dupont')
+    .field('email', 'alice@test.com')
+    .field('poste', 'Dev')
+    .attach(
+      'cv',
+      Buffer.from('fake text'),
+      {
+        filename: 'cv.txt',
+        contentType: 'text/plain'
+      }
+    )
+
+  expect(res.status).toBe(400)
+  expect(res.body.error).toBe('format de fichier invalide')
+})
+
+test('retourne 500 si la base de données échoue', async () => {
+  pool.query.mockRejectedValue(new Error('Database error'))
+
+  const res = await request(app)
+    .post('/recrutement/candidat')
+    .field('nom', 'Alice')
+    .field('prenom', 'Dupont')
+    .field('email', 'alice@test.com')
+    .field('poste', 'Dev')
+    .attach(
+      'cv',
+      Buffer.from('fake pdf content'),
+      {
+        filename: 'cv.pdf',
+        contentType: 'application/pdf'
+      }
+    )
+
+  expect(res.status).toBe(500)
+  expect(res.body.error).toBe('Database error')
+})
+
+test('retourne 500 si la récupération des candidatures échoue', async () => {
+  pool.query.mockRejectedValue(new Error('Database error'))
+
+  const res = await request(app)
+    .get('/recrutement/candidats')
+
+  expect(res.status).toBe(500)
+  expect(res.body.error).toBe('Database error')
+})
+
+test('retourne 500 si la mise à jour échoue', async () => {
+  pool.query.mockRejectedValue(new Error('Database error'))
+
+  const res = await request(app)
+    .patch('/recrutement/candidat/1/statut')
+    .send({ statut: 'validé' })
+
+  expect(res.status).toBe(500)
+  expect(res.body.error).toBe('Database error')
+})
