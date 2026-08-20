@@ -1,0 +1,349 @@
+openapi: 3.0.3
+info:
+  title: NovaTech HRFlow — Service Paie
+  description: |
+    API du microservice de calcul de paie (`services/paie`).
+    Expose le calcul des bulletins de paie, les heures supplémentaires,
+    les métriques Prometheus et une route de migration de schéma protégée.
+  version: 1.0.0
+  contact:
+    name: NovaTech HRFlow
+servers:
+  - url: http://localhost:3002
+    description: Environnement local
+  - url: https://api.novatech-hrflow.internal/paie
+    description: Environnement de production (via API Gateway)
+
+tags:
+  - name: Santé
+    description: Health check et métriques
+  - name: Paie
+    description: Calcul de la paie
+  - name: Administration
+    description: Opérations d'administration protégées
+
+paths:
+  /health:
+    get:
+      tags: [Santé]
+      summary: Vérifie l'état du service
+      description: Utilisé par les health checks ECS (`healthCheck.command`) et par Prometheus (`up{job="paie"}`).
+      operationId: getHealth
+      responses:
+        "200":
+          description: Le service répond normalement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                service: paie
+
+  /metrics:
+    get:
+      tags: [Santé]
+      summary: Métriques Prometheus
+      description: "Expose les métriques au format texte Prometheus (`prom-client`) : métriques par défaut préfixées `paie_`, plus `http_request_duration_seconds` et `http_requests_total`."
+      operationId: getMetrics
+      responses:
+        "200":
+          description: Métriques au format d'exposition Prometheus.
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP http_requests_total Nombre total de requêtes HTTP
+                # TYPE http_requests_total counter
+                http_requests_total{method="GET",route="/health",status="200"} 42
+
+  /paie/calculer:
+    post:
+      tags: [Paie]
+      summary: Calcule le bulletin de paie d'un employé
+      description: |
+        Calcule le brut, les cotisations salariales/patronales et le net pour un employé,
+        enregistre le bulletin en base (`bulletins_paie`), puis déclenche un virement Stripe
+        (les erreurs Stripe sont journalisées mais n'empêchent pas la réponse).
+      operationId: calculerPaie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculerPaieRequest"
+            example:
+              employeeId: 42
+              mois: 8
+              annee: 2026
+      responses:
+        "200":
+          description: Bulletin de paie calculé et enregistré.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bulletin"
+              example:
+                employeeId: 42
+                mois: 8
+                annee: 2026
+                brut: 3200
+                cotisationsSalariales: 704
+                cotisationsPatronales: 1344
+                net: 2496
+                generatedAt: "2026-08-20T09:15:00.000Z"
+        "404":
+          description: Employé introuvable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Employee not found
+        "500":
+          description: Erreur serveur (base de données injoignable, requête invalide, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "connect ECONNREFUSED 127.0.0.1:5432"
+
+  /paie/heures-sup:
+    post:
+      tags: [Paie]
+      summary: Calcule la majoration pour heures supplémentaires
+      description: Calcule le taux horaire à partir du salaire mensuel brut (base 151,67h) et applique une majoration de 25 %.
+      operationId: calculerHeuresSup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeuresSupRequest"
+            example:
+              employeeId: 42
+              heures: 10
+      responses:
+        "200":
+          description: Majoration calculée.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeuresSupResponse"
+              example:
+                heures: 10
+                tauxHoraire: 21.1
+                majorationHeuresSup: 263.75
+                total: 263.75
+        "404":
+          description: Employé introuvable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Employee not found
+        "500":
+          description: Erreur serveur.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "connect ECONNREFUSED 127.0.0.1:5432"
+
+  /paie/migrate:
+    post:
+      tags: [Administration]
+      summary: Applique la migration de schéma de la base de paie
+      description: |
+        **Route sensible.** Nécessite `adminKey` égal à la variable d'environnement
+        `MIGRATION_ADMIN_KEY`. Ajoute les colonnes `salaire_variable` (employees) et
+        `periode_reference` (bulletins_paie) si absentes, et met à jour `employees.updated_at`.
+
+        ⚠️ Voir [`runbook-incident-p1.md`](./runbook-incident-p1.md) — l'absence de protection
+        sur cette route est la cause racine de l'incident P1 du 14/15 août 2024. Ne jamais
+        l'exécuter en production sans validation préalable et backup récent.
+      operationId: migrer
+      security:
+        - adminKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MigrateRequest"
+            example:
+              adminKey: "********"
+      responses:
+        "200":
+          description: Migration appliquée avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrateResponse"
+              example:
+                success: true
+        "403":
+          description: Clé d'administration manquante ou incorrecte.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Forbidden — admin key required"
+        "500":
+          description: Erreur lors de l'exécution de la migration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "relation \"employees\" does not exist"
+
+components:
+  securitySchemes:
+    adminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+      description: |
+        Représentation documentaire du contrôle applicatif : la clé est en réalité
+        transmise dans le corps de la requête JSON (`adminKey`), comparée à
+        `MIGRATION_ADMIN_KEY` côté serveur.
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: paie
+      required: [status, service]
+
+    CalculerPaieRequest:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          example: 42
+        mois:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 8
+        annee:
+          type: integer
+          example: 2026
+      required: [employeeId, mois, annee]
+
+    Bulletin:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          example: 42
+        mois:
+          type: integer
+          example: 8
+        annee:
+          type: integer
+          example: 2026
+        brut:
+          type: number
+          format: float
+          description: Salaire mensuel brut de l'employé.
+          example: 3200
+        cotisationsSalariales:
+          type: number
+          format: float
+          description: 22 % du brut.
+          example: 704
+        cotisationsPatronales:
+          type: number
+          format: float
+          description: 42 % du brut.
+          example: 1344
+        net:
+          type: number
+          format: float
+          description: Brut moins cotisations salariales.
+          example: 2496
+        generatedAt:
+          type: string
+          format: date-time
+          example: "2026-08-20T09:15:00.000Z"
+      required:
+        - employeeId
+        - mois
+        - annee
+        - brut
+        - cotisationsSalariales
+        - cotisationsPatronales
+        - net
+        - generatedAt
+
+    HeuresSupRequest:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          example: 42
+        heures:
+          type: number
+          format: float
+          example: 10
+      required: [employeeId, heures]
+
+    HeuresSupResponse:
+      type: object
+      properties:
+        heures:
+          type: number
+          format: float
+          example: 10
+        tauxHoraire:
+          type: number
+          format: float
+          description: Salaire mensuel brut divisé par 151,67.
+          example: 21.1
+        majorationHeuresSup:
+          type: number
+          format: float
+          description: heures × tauxHoraire × 1.25
+          example: 263.75
+        total:
+          type: number
+          format: float
+          example: 263.75
+      required: [heures, tauxHoraire, majorationHeuresSup, total]
+
+    MigrateRequest:
+      type: object
+      properties:
+        adminKey:
+          type: string
+          description: Doit correspondre à la variable d'environnement `MIGRATION_ADMIN_KEY`.
+          example: "********"
+      required: [adminKey]
+
+    MigrateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+      required: [success]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Employee not found"
+      required: [error]
