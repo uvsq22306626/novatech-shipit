@@ -1,6 +1,32 @@
 node_modules/
 dist/
 build/
-.DS_Store
-.env
 coverage/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Lock files (gérés localement)
+package-lock.json
+yarn.lock
+
+# Misc
+*.tmp
+*.swp

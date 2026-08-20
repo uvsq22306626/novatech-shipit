@@ -1,0 +1,70 @@
+groups:
+  - name: novatech.hrflow
+    rules:
+
+      # ── Latence P99 > 1s ──────────────────────────────────────────────────────
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence P99 élevée sur {{ $labels.job }}"
+          description: "P99 = {{ $value | humanizeDuration }} (seuil 1s) sur le service {{ $labels.job }}"
+
+      # ── Taux d'erreurs 5xx > 5% ───────────────────────────────────────────────
+      - alert: High5xxErrorRate
+        expr: |
+          rate(http_requests_total{status=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs 5xx critique sur {{ $labels.job }}"
+          description: "{{ $value | humanizePercentage }} de requêtes en erreur 5xx sur {{ $labels.job }}"
+
+      # ── Service down (health check) ───────────────────────────────────────────
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service DOWN : {{ $labels.job }}"
+          description: "Le service {{ $labels.job }} ne répond plus depuis plus d'1 minute."
+
+      # ── CPU saturation > 80% ──────────────────────────────────────────────────
+      - alert: HighCPUSaturation
+        expr: |
+          rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU élevé sur {{ $labels.job }}"
+          description: "CPU à {{ $value | humanize }}% sur {{ $labels.job }} depuis 5 min"
+
+      # ── Mémoire > 500 Mo ──────────────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes > 500 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mémoire élevée sur {{ $labels.job }}"
+          description: "{{ $labels.job }} consomme {{ $value | humanize1024 }}B de RAM"
+
+      # ── Incident P1 : service paie down pendant clôture ───────────────────────
+      - alert: PaieServiceDown
+        expr: up{job="paie"} == 0
+        for: 30s
+        labels:
+          severity: p1
+        annotations:
+          summary: "[P1] Service PAIE indisponible"
+          description: "Le service de calcul de paie est DOWN depuis 30s. Intervention immédiate requise."
