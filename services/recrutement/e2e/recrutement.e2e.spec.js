@@ -79,3 +79,46 @@ test('Erreur de validation - email manquant', async ({ request }) => {
   const body = await res.json()
   expect(body.error).toContain('Champs obligatoires')
 })
+//Erreur de validation - email invalide
+test('Erreur de validation - email invalide', async ({ request }) => {
+  const res = await request.post('http://localhost:3004/recrutement/candidat', {
+    multipart: {
+      nom: 'David',
+      prenom: 'Smith',
+      email: 'not-an-email',
+      poste: 'Dev',
+      cv: {
+        name: 'cv.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from('fake pdf content')
+      }
+    }
+  })
+
+  expect(res.status()).toBe(400)
+  const body = await res.json()
+  expect(body.error).toContain('email invalide')
+})
+
+//Erreur de validation - fichier non PDF
+test('Erreur de validation - fichier non PDF', async ({ request }) => {
+  const res = await request.post('http://localhost:3004/recrutement/candidat', {
+    multipart: {
+      nom: 'Emma',
+      prenom: 'Lopez',
+      email: 'emma@test.com',
+      poste: 'QA',
+      cv: {
+        name: 'cv.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('fake text content')
+      }
+    }
+  })
+
+  expect(res.status()).toBe(400)
+  const body = await res.json()
+  expect(body.error).toContain('format de fichier invalide')
+})
+
+

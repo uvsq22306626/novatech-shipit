@@ -73,3 +73,38 @@ jobs:
           format: table
           exit-code: '0'
           severity: HIGH,CRITICAL
+
+  recrutement-e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances
+        working-directory: services/recrutement
+        run: npm install
+
+      - name: Installer Playwright
+        working-directory: services/recrutement
+        run: npx playwright install --with-deps
+
+      - name: Démarrer le service
+        working-directory: services/recrutement
+        run: |
+              MOCK_DB=true npm start > server.log 2>&1 &
+              sleep 5
+              cat server.log
+
+      - name: Attendre le démarrage du service
+        working-directory: services/recrutement
+        run: npx wait-on --timeout 30000 http://localhost:3004
+
+      - name: Tests E2E
+        working-directory: services/recrutement
+        run: npm run test:e2e
