@@ -9,7 +9,7 @@ app.use(express.json())
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 pool.on('error', (err) => console.error('[PAIE] Pool error:', err.message))
 
-client.collectDefaultMetrics({ prefix: 'paie_' })
+client.collectDefaultMetrics()
 
 const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
