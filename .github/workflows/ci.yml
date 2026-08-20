@@ -97,11 +97,13 @@ jobs:
       - name: Démarrer le service
         working-directory: services/recrutement
         run: |
-          MOCK_DB=true npm start > server.log 2>&1 &
+              MOCK_DB=true npm start > server.log 2>&1 &
+              sleep 5
+              cat server.log
 
       - name: Attendre le démarrage du service
         working-directory: services/recrutement
-        run: npx wait-on http://localhost:3004
+        run: npx wait-on --timeout 30000 http://localhost:3004
 
       - name: Tests E2E
         working-directory: services/recrutement
