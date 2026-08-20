@@ -133,3 +133,6 @@ services:
     region: frankfurt
     branch: develop
     rootDir: monitoring/render/grafana
+    envVars:
+      - key: GF_SERVER_ROOT_URL
+        value: https://novatech-shipit-grafana-dev-4xk1.onrender.com/
