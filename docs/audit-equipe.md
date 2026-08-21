@@ -23,6 +23,10 @@ Liste priorisée des problèmes identifiés, par domaine.
 | 10 | Aucun Dockerfile pour api-gateway, paie, congés | 🟠 Élevée | ✅ Corrigé |
 | 11 | Aucun environnement de test local reproductible (pas de docker-compose) | 🟡 Moyenne | ✅ Corrigé |
 | 12 | Absence de stage Deploy dans le pipeline | 🟠 Élevée | 🚧 En cours |
+| 13 | Déploiement AWS/Terraform trop lourd pour le délai imparti | 🟡 Moyenne | ✅ Corrigé (pivot vers Render) |
+| 14 | Aucune vérification automatique après déploiement | 🟠 Élevée | ✅ Corrigé (stage health-check-render) |
+| 15 | Pipeline ne se déclenchait pas sur develop (branche de déploiement réelle) | 🔴 Critique | ✅ Corrigé |
+| 16 | Service Auth sans endpoint /metrics ni /health | 🟡 Moyenne | ✅ Corrigé |
 
 ## Paie & Infra Terraform (à compléter)
 
