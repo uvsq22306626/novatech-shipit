@@ -49,6 +49,8 @@ app.get('/metrics', async (_req, res) => {
   res.end(await client.register.metrics())
 })
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }))
+
 // Login simple — à améliorer plus tard
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body
