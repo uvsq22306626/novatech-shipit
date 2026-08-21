@@ -54,24 +54,21 @@ jobs:
           format: table
           exit-code: '0'
           severity: HIGH,CRITICAL
-    health-check-render:
+  health-check-render:
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     needs: [build, security]
     runs-on: ubuntu-latest
     steps:
       - name: Attendre que Render termine le déploiement
         run: sleep 90
-
       - name: Vérifier l'API Gateway
         run: |
           curl -sf https://novatech-shipit-api-gateway-dev-4xk1.onrender.com/health \
             || (echo "❌ api-gateway ne répond pas" && exit 1)
-
       - name: Vérifier le service Auth
         run: |
           curl -sf https://novatech-shipit-auth-dev-4xk1.onrender.com/health \
             || echo "⚠️ auth ne répond pas (pas bloquant si pas de /health défini)"
-
       - name: Vérifier le frontend
         run: |
           curl -sf https://novatech-shipit-frontend-dev-4xk1.onrender.com \
