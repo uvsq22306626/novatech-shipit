@@ -1,0 +1,49 @@
+<svg width="680" height="300" viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg">
+<rect width="680" height="300" fill="#ffffff"/>
+
+<rect x="20" y="30" width="130" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="85" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#2C2C2A">Push develop</text>
+<text x="85" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#5F5E5A">GitHub</text>
+
+<line x1="150" y1="58" x2="180" y2="58" stroke="#5F5E5A" stroke-width="1.5"/>
+<polygon points="186,58 178,53 178,63" fill="#5F5E5A"/>
+
+<rect x="186" y="30" width="140" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text x="256" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#04342C">CI: build+security</text>
+<text x="256" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#0F6E56">5 services en matrice</text>
+
+<line x1="326" y1="58" x2="356" y2="58" stroke="#5F5E5A" stroke-width="1.5"/>
+<polygon points="362,58 354,53 354,63" fill="#5F5E5A"/>
+
+<rect x="362" y="30" width="130" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="427" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#26215C">Render</text>
+<text x="427" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#534AB7">déploiement auto</text>
+
+<line x1="492" y1="58" x2="522" y2="58" stroke="#5F5E5A" stroke-width="1.5"/>
+<polygon points="528,58 520,53 520,63" fill="#5F5E5A"/>
+
+<rect x="528" y="30" width="130" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="593" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#26215C">Health check</text>
+<text x="593" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#534AB7">vérifie les endpoints</text>
+
+<rect x="60" y="150" width="560" height="120" rx="16" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="80" y="174" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#2C2C2A">Monitoring</text>
+
+<rect x="90" y="195" width="130" height="50" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="155" y="216" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#412402">Prometheus</text>
+<text x="155" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#854F0B">scrape /metrics</text>
+
+<line x1="220" y1="220" x2="270" y2="220" stroke="#5F5E5A" stroke-width="1.5"/>
+<polygon points="276,220 268,215 268,225" fill="#5F5E5A"/>
+
+<rect x="276" y="195" width="130" height="50" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="341" y="216" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#412402">Grafana</text>
+<text x="341" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#854F0B">golden signals</text>
+
+<path d="M155 245 L155 258 L462 258 L462 220" fill="none" stroke="#5F5E5A" stroke-width="1.5"/>
+<polygon points="462,214 457,222 467,222" fill="#5F5E5A"/>
+
+<rect x="466" y="195" width="130" height="50" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text x="531" y="216" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#412402">Alertmanager</text>
+<text x="531" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#854F0B">Slack</text>
+</svg>
