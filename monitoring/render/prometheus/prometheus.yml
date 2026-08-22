@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - scheme: https
+      static_configs:
+        - targets: ['novatech-shipit-alertmanager-dev-4xk1.onrender.com']
+
+rule_files:
+  - 'alerts.yml'
+
+# Config Prometheus dédiée au déploiement Render : cible uniquement paie
+# (seul service qui expose /metrics pour l'instant). Ne pas confondre avec
+# monitoring/prometheus.yml, utilisé par docker-compose.monitoring.yml en local.
+scrape_configs:
+  - job_name: 'paie'
+    scheme: https
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['novatech-shipit-paie-dev-4xk1.onrender.com']

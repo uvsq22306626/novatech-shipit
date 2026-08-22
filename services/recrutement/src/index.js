@@ -108,6 +108,7 @@ module.exports = app
 
 // 👉 Démarrer le serveur seulement si on lance en prod/dev
 if (require.main === module) {
-  app.listen(3004, () => console.log('Recrutement service running on :3004'))
+  const PORT = process.env.PORT || 3004
+  app.listen(PORT, () => console.log(`Recrutement service running on :${PORT}`))
 }
 

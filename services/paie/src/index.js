@@ -9,7 +9,7 @@ app.use(express.json())
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 pool.on('error', (err) => console.error('[PAIE] Pool error:', err.message))
 
-client.collectDefaultMetrics({ prefix: 'paie_' })
+client.collectDefaultMetrics()
 
 const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
@@ -102,7 +102,8 @@ app.post('/paie/heures-sup', async (req, res) => {
 })
 
 if (require.main === module) {
-  app.listen(3002, () => console.log('Paie service running on :3002'))
+  const PORT = process.env.PORT || 3002
+  app.listen(PORT, () => console.log(`Paie service running on :${PORT}`))
 }
 
 module.exports = app

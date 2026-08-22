@@ -2,6 +2,7 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const { Pool } = require('pg')
+const client = require('prom-client')
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET manquant — configurez votre fichier .env')
@@ -17,6 +18,38 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 })
+
+client.collectDefaultMetrics()
+
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Durée des requêtes HTTP en secondes',
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5],
+})
+
+const httpRequestTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Nombre total de requêtes HTTP',
+  labelNames: ['method', 'route', 'status'],
+})
+
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer()
+  res.on('finish', () => {
+    const labels = { method: req.method, route: req.path, status: res.statusCode }
+    end(labels)
+    httpRequestTotal.inc(labels)
+  })
+  next()
+})
+
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', client.register.contentType)
+  res.end(await client.register.metrics())
+})
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
 // Login simple — à améliorer plus tard
 app.post('/auth/login', async (req, res) => {
@@ -48,8 +81,9 @@ app.post('/auth/verify', (req, res) => {
 })
 
 if (require.main === module) {
-   app.listen(3001, () => {
-     console.log('Auth service running on :3001')
+   const PORT = process.env.PORT || 3001
+   app.listen(PORT, () => {
+     console.log(`Auth service running on :${PORT}`)
    })
 }
 

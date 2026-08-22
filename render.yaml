@@ -1,0 +1,149 @@
+envVarGroups:
+  - name: hrflow-shared
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: novatech-shipit-db-dev
+    databaseName: hrflow
+    user: hrflow
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: novatech-shipit-auth-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: services/auth
+    envVars:
+      - fromGroup: hrflow-shared
+      - key: DB_HOST
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: password
+
+  - type: web
+    name: novatech-shipit-paie-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: services/paie
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: connectionString
+      - key: STRIPE_SECRET_KEY
+        value: sk_test_dummy
+      - key: MIGRATION_ADMIN_KEY
+        generateValue: true
+
+  - type: web
+    name: novatech-shipit-conges-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: services/conges
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: connectionString
+
+  - type: web
+    name: novatech-shipit-recrutement-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: services/recrutement
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: novatech-shipit-db-dev
+          property: connectionString
+      - key: MOCK_DB
+        value: "false"
+
+  - type: web
+    name: novatech-shipit-api-gateway-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: services/api-gateway
+    envVars:
+      - fromGroup: hrflow-shared
+      - key: ALLOWED_ORIGINS
+        value: https://novatech-shipit-frontend-dev-4xk1.onrender.com
+      - key: AUTH_SERVICE_URL
+        value: https://novatech-shipit-auth-dev-4xk1.onrender.com
+      - key: PAIE_SERVICE_URL
+        value: https://novatech-shipit-paie-dev-4xk1.onrender.com
+      - key: CONGES_SERVICE_URL
+        value: https://novatech-shipit-conges-dev-4xk1.onrender.com
+      - key: RECRUTEMENT_SERVICE_URL
+        value: https://novatech-shipit-recrutement-dev-4xk1.onrender.com
+
+  - type: web
+    name: novatech-shipit-frontend-dev
+    runtime: static
+    branch: develop
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://novatech-shipit-api-gateway-dev-4xk1.onrender.com/api
+
+  - type: web
+    name: novatech-shipit-alertmanager-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/alertmanager
+    envVars:
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+
+  - type: web
+    name: novatech-shipit-prometheus-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/prometheus
+
+  - type: web
+    name: novatech-shipit-grafana-dev
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: develop
+    rootDir: monitoring/render/grafana
+    envVars:
+      - key: GF_SERVER_ROOT_URL
+        value: https://novatech-shipit-grafana-dev-4xk1.onrender.com/
