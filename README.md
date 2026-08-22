@@ -16,6 +16,10 @@ Le projet est découpé en 5 services Node.js/Express, chacun avec sa propre bas
 
 Tous les services (sauf `recrutement` en mode mock) partagent une base **PostgreSQL** unique.
 
+![Architecture applicative](docs/architecture-applicative.svg)
+
+*Le frontend appelle l'API Gateway, qui route vers les 5 services backend, tous connectés à une base Postgres partagée.*
+
 Pour le détail des schémas et des flux entre services, voir [`docs/architecture.md`](docs/architecture.md).
 
 ## Prérequis
@@ -68,6 +72,10 @@ Le pipeline GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.ym
 1. **Build** — pour chacun des 5 services : installation des dépendances, vérification de la syntaxe, exécution des tests et de la couverture.
 2. **Security** — audit des dépendances (`npm audit`) et scan de l'image Docker de chaque service avec [Trivy](https://github.com/aquasecurity/trivy) (sévérités HIGH/CRITICAL, non bloquant pour l'instant).
 3. **health-check-render** — uniquement sur push vers `develop` : après le déploiement Render, vérifie que l'API Gateway, le service Auth et le frontend répondent (`/health`).
+
+![Pipeline CI/CD et monitoring](docs/pipeline-cicd-monitoring.svg)
+
+*Un push sur develop déclenche le pipeline (build, tests, scan sécurité), puis Render redéploie automatiquement. Prometheus scrape les services pour alimenter Grafana et Alertmanager.*
 
 ## Déploiement
 
