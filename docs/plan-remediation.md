@@ -24,9 +24,41 @@
 
 _À compléter par la responsable de ce lot._
 
-## Congés & Feature Flags (à compléter)
+## Congés & Feature Flags
 
-_À compléter par la responsable de ce lot._
+- **Suppression de l'endpoint de debug** : suppression de `/conges/debug/all`, qui permettait d'exposer l'ensemble des congés et des informations employés sans contrôle d'accès.
+
+- **Gestion des erreurs PostgreSQL** : ajout de blocs `try/catch` autour des accès à la base de données. En cas d'erreur interne, l'API retourne désormais une réponse HTTP `500` contrôlée sans exposer les détails techniques au client.
+
+- **Validation des demandes de congés** : ajout de contrôles sur les champs obligatoires (`employeeId`, `dateDebut`, `dateFin`, `motif`) avant toute insertion en base. Une requête incomplète retourne désormais une erreur HTTP `400`.
+
+- **Validation des dates** : contrôle du format des dates et vérification que la date de fin est supérieure ou égale à la date de début. Les demandes contenant des dates incohérentes sont rejetées avec une erreur HTTP `400`.
+
+- **Correction du calcul du nombre de jours** : modification du calcul afin d'inclure le premier jour de congé. Une demande du 1er au 3 septembre correspond désormais correctement à 3 jours et une demande sur une seule journée correspond à 1 jour.
+
+- **Gestion des employés inexistants** : l'endpoint de consultation du solde retourne désormais une réponse HTTP `404` lorsqu'aucun employé ne correspond à l'identifiant fourni.
+
+- **Tests automatisés** : ajout de tests Jest et Supertest couvrant les principaux comportements du service, les validations, les erreurs PostgreSQL et la logique liée au Feature Flag. Les tests utilisent des mocks PostgreSQL et Unleash afin de rester indépendants des services externes.
+
+- **Couverture de tests** : ajout de la génération du coverage avec Jest. Lors de la validation locale, les 12 tests passent avec 100 % de couverture sur les statements, functions et lines, et 95,45 % sur les branches.
+
+- **Intégration des tests dans la CI** : ajout de l'installation avec `npm ci`, de l'exécution des tests Jest et de la génération du coverage pour le service Congés dans GitHub Actions.
+
+- **Feature Flags avec Unleash** : intégration d'Unleash afin de pouvoir activer ou désactiver dynamiquement une fonctionnalité sans modification du code ni redéploiement du service.
+
+- **Approbation automatique des congés** : création du Feature Flag `conges-automatic-approval`. Lorsque le flag est désactivé, les demandes restent `en_attente`. Lorsqu'il est activé, les demandes de 3 jours ou moins sont automatiquement `approuve`, tandis que les demandes supérieures à 3 jours restent `en_attente`.
+
+- **Validation du Feature Flag** : trois scénarios ont été vérifiés : flag OFF + 3 jours → `en_attente`, flag ON + 3 jours → `approuve`, flag ON + 4 jours → `en_attente`. Le changement du flag est pris en compte sans redémarrage du service.
+
+- **Configuration sécurisée d'Unleash** : l'URL, le token API, le nom de l'application et l'environnement Unleash sont fournis via des variables d'environnement. Le fichier `.env` contenant les valeurs locales n'est pas versionné dans Git.
+
+- **Environnement Unleash reproductible** : ajout d'un `docker-compose.unleash.yml` permettant de lancer localement Unleash et sa base PostgreSQL.
+
+- **Observabilité** : ajout prévu de l'endpoint `/metrics` avec `prom-client` afin que Prometheus puisse collecter les métriques du service Congés et les rendre disponibles dans le dashboard Grafana.
+
+- **Documentation OpenAPI/Swagger** : documentation des endpoints du service Congés à finaliser afin de fournir le contrat d'API demandé dans les livrables.
+
+- **Tests E2E** : participation aux scénarios Playwright du projet à finaliser afin de couvrir le parcours fonctionnel de bout en bout.
 
 ## Recrutement & Documentation (à compléter)
 
