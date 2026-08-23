@@ -7,6 +7,11 @@ const path = require('path')
 const client = require('prom-client')
 
 const app = express()
+
+const swaggerDocument = YAML.load(
+  path.join(__dirname, 'docs', 'openapi.yaml')
+)
+
 client.collectDefaultMetrics()
 
 const httpRequestDuration = new client.Histogram({
@@ -22,22 +27,7 @@ const httpRequestTotal = new client.Counter({
   labelNames: ['method', 'route', 'status']
 })
 
-const swaggerDocument = YAML.load(
-  path.join(__dirname, 'docs', 'openapi.yaml')
-)
-
 app.use(express.json())
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-})
-
-// Documentation Swagger
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument)
-)
 
 app.use((req, res, next) => {
   const end = httpRequestDuration.startTimer()
@@ -53,6 +43,17 @@ app.use((req, res, next) => {
   next()
 })
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+})
+
+// Documentation Swagger
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+)
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -66,6 +67,7 @@ app.get('/metrics', async (_req, res) => {
   res.set('Content-Type', client.register.contentType)
   res.end(await client.register.metrics())
 })
+
 // Consulter le solde de congés d'un employé
 app.get('/conges/solde/:employeeId', async (req, res) => {
   try {
