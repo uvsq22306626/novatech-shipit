@@ -1,0 +1,320 @@
+openapi: 3.0.3
+
+info:
+  title: NovaTech HRFlow - Service Congés
+  version: 1.0.0
+  description: >
+    Documentation OpenAPI du microservice Congés de NovaTech HRFlow.
+    Le service permet de consulter le solde de congés d'un employé,
+    de créer une demande de congé, d'exposer un health check
+    et des métriques Prometheus.
+
+servers:
+  - url: http://localhost:3003
+    description: Environnement local
+
+tags:
+  - name: Health
+    description: Vérification de l'état du service
+  - name: Monitoring
+    description: Métriques Prometheus
+  - name: Congés
+    description: Gestion des demandes et soldes de congés
+
+paths:
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Vérifier l'état du service Congés
+      description: Retourne l'état de disponibilité du microservice.
+      responses:
+        "200":
+          description: Service disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  service:
+                    type: string
+                    example: conges
+              example:
+                status: UP
+                service: conges
+
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Exposer les métriques Prometheus
+      description: >
+        Retourne les métriques système Node.js et les métriques HTTP
+        du service au format Prometheus.
+      responses:
+        "200":
+          description: Métriques Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP http_requests_total Nombre total de requêtes HTTP
+                # TYPE http_requests_total counter
+                http_requests_total{method="GET",route="/health",status="200"} 6
+
+  /conges/solde/{employeeId}:
+    get:
+      tags:
+        - Congés
+      summary: Consulter le solde de congés d'un employé
+      description: >
+        Calcule le solde de congés à partir du nombre de jours acquis,
+        des congés approuvés et des demandes en attente.
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          description: Identifiant de l'employé
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+
+      responses:
+        "200":
+          description: Solde de congés retourné avec succès
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveBalance"
+              example:
+                solde: 18
+                joursAcquis: 25
+                joursPris: 7
+                joursEnAttente: 3
+
+        "404":
+          description: Employé introuvable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Employé introuvable
+
+        "500":
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Erreur interne du serveur
+
+  /conges/demande:
+    post:
+      tags:
+        - Congés
+      summary: Créer une demande de congé
+      description: >
+        Crée une nouvelle demande de congé.
+
+        Le statut de la demande dépend du Feature Flag
+        `conges-automatic-approval`.
+
+        Lorsque le flag est désactivé, la demande reste `en_attente`.
+
+        Lorsque le flag est activé, une demande de trois jours ou moins
+        est automatiquement marquée `approuve`.
+
+        Les demandes supérieures à trois jours restent `en_attente`.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeaveRequest"
+            example:
+              employeeId: 1
+              dateDebut: "2026-09-10"
+              dateFin: "2026-09-12"
+              motif: Vacances
+
+      responses:
+        "201":
+          description: Demande de congé créée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+              examples:
+                pending:
+                  summary: Feature Flag désactivé
+                  value:
+                    id: 1
+                    employee_id: 1
+                    date_debut: "2026-09-10"
+                    date_fin: "2026-09-12"
+                    nombre_jours: 3
+                    motif: Vacances
+                    statut: en_attente
+                    created_at: "2026-09-01T10:00:00.000Z"
+
+                approved:
+                  summary: Feature Flag activé
+                  value:
+                    id: 2
+                    employee_id: 1
+                    date_debut: "2026-09-10"
+                    date_fin: "2026-09-12"
+                    nombre_jours: 3
+                    motif: Vacances
+                    statut: approuve
+                    created_at: "2026-09-01T10:00:00.000Z"
+
+        "400":
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingFields:
+                  summary: Champs obligatoires manquants
+                  value:
+                    error: employeeId, dateDebut, dateFin et motif sont obligatoires
+
+                invalidDate:
+                  summary: Date invalide
+                  value:
+                    error: Les dates sont invalides
+
+                invalidRange:
+                  summary: Date de fin antérieure à la date de début
+                  value:
+                    error: La date de fin doit être supérieure ou égale à la date de début
+
+        "500":
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Erreur interne du serveur
+
+components:
+
+  schemas:
+
+    LeaveBalance:
+      type: object
+      required:
+        - solde
+        - joursAcquis
+        - joursPris
+        - joursEnAttente
+      properties:
+        solde:
+          type: integer
+          description: Nombre de jours restant disponibles
+          example: 18
+
+        joursAcquis:
+          type: integer
+          description: Nombre total de jours acquis
+          example: 25
+
+        joursPris:
+          type: integer
+          description: Nombre de jours approuvés
+          example: 7
+
+        joursEnAttente:
+          type: integer
+          description: Nombre de jours actuellement en attente
+          example: 3
+
+    CreateLeaveRequest:
+      type: object
+      required:
+        - employeeId
+        - dateDebut
+        - dateFin
+        - motif
+      properties:
+        employeeId:
+          type: integer
+          minimum: 1
+          example: 1
+
+        dateDebut:
+          type: string
+          format: date
+          example: "2026-09-10"
+
+        dateFin:
+          type: string
+          format: date
+          example: "2026-09-12"
+
+        motif:
+          type: string
+          minLength: 1
+          example: Vacances
+
+    LeaveRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        employee_id:
+          type: integer
+          example: 1
+
+        date_debut:
+          type: string
+          format: date
+          example: "2026-09-10"
+
+        date_fin:
+          type: string
+          format: date
+          example: "2026-09-12"
+
+        nombre_jours:
+          type: integer
+          example: 3
+
+        motif:
+          type: string
+          example: Vacances
+
+        statut:
+          type: string
+          enum:
+            - en_attente
+            - approuve
+          example: en_attente
+
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-09-01T10:00:00.000Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Erreur interne du serveur

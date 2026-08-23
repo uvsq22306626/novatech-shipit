@@ -1,14 +1,19 @@
 const express = require('express')
 const { Pool } = require('pg')
 const unleash = require('./config/unleash')
+const swaggerUi = require('swagger-ui-express')
+const YAML = require('yamljs')
+const path = require('path')
 const client = require('prom-client')
 
 const app = express()
 
-// Métriques système Node.js : CPU, mémoire, event loop, etc.
+const swaggerDocument = YAML.load(
+  path.join(__dirname, 'docs', 'openapi.yaml')
+)
+
 client.collectDefaultMetrics()
 
-// Histogramme de durée des requêtes HTTP
 const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Durée des requêtes HTTP en secondes',
@@ -16,7 +21,6 @@ const httpRequestDuration = new client.Histogram({
   buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5]
 })
 
-// Compteur du nombre total de requêtes HTTP
 const httpRequestTotal = new client.Counter({
   name: 'http_requests_total',
   help: 'Nombre total de requêtes HTTP',
@@ -25,27 +29,30 @@ const httpRequestTotal = new client.Counter({
 
 app.use(express.json())
 
-// Middleware de collecte des métriques HTTP
 app.use((req, res, next) => {
   const end = httpRequestDuration.startTimer()
-
   res.on('finish', () => {
     const labels = {
       method: req.method,
       route: req.path,
       status: res.statusCode
     }
-
     end(labels)
     httpRequestTotal.inc(labels)
   })
-
   next()
 })
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 })
+
+// Documentation Swagger
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+)
 
 // Health check
 app.get('/health', (req, res) => {
