@@ -1,14 +1,28 @@
 const express = require('express')
 const { Pool } = require('pg')
 const unleash = require('./config/unleash')
+const swaggerUi = require('swagger-ui-express')
+const YAML = require('yamljs')
+const path = require('path')
 
 const app = express()
+
+const swaggerDocument = YAML.load(
+  path.join(__dirname, 'docs', 'openapi.yaml')
+)
 
 app.use(express.json())
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 })
+
+// Documentation Swagger
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+)
 
 // Health check
 app.get('/health', (req, res) => {
