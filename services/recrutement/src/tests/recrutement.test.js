@@ -100,4 +100,3 @@ test('refuse une mise à jour avec statut vide', async () => {
   expect(res.status).toBe(400)
   expect(res.body.error).toBeDefined()
 })
-
