@@ -24,6 +24,7 @@
     "test:merge": "npx nyc merge .nyc_output coverage/merged.json && npx nyc report --reporter=text-summary --temp-dir=coverage --report-dir=coverage",
     "test:all": "npm run test:unit && npm run start:cov & wait-on http://localhost:3004 && npm run test:e2e && npm run test:merge",
     "test": "npm run test:unit",
+    "test:coverage": "jest --coverage",
     "report": "npx nyc report --reporter=lcov --reporter=text-summary"
   },
   "nyc": {

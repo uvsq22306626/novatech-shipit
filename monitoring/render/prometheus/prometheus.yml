@@ -20,3 +20,8 @@ scrape_configs:
     metrics_path: '/metrics'
     static_configs:
       - targets: ['novatech-shipit-paie-dev-4xk1.onrender.com']
+  - job_name: 'recrutement'
+    scheme: https
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['novatech-shipit-recrutement-dev-4xk1.onrender.com']

@@ -31,6 +31,10 @@ app.use((req, res, next) => {
   next()
 })
 
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'recrutement' })
+})
+
 app.get('/metrics', async (_req, res) => {
   res.set('Content-Type', client.register.contentType)
   res.end(await client.register.metrics())
