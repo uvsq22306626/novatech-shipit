@@ -60,6 +60,14 @@ describe('POST /auth/login', () => {
 
     expect(res.status).toBe(401)
   })
+  test('retourne 500 si la base de données échoue', async () => {
+  pool.query.mockRejectedValue(new Error('Connexion DB perdue'))
+  const res = await request(app)
+    .post('/auth/login')
+    .send({ email: 'user@test.com', password: 'quelconque' })
+  expect(res.status).toBe(500)
+  expect(res.body).toHaveProperty('error')
+ })
 })
 
 describe('POST /auth/verify', () => {
