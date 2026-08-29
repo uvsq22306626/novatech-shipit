@@ -67,7 +67,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erreur interne du serveur' })
 })
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`API Gateway running on :${PORT}`)
-})
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000
+  app.listen(PORT, () => {
+    console.log(`API Gateway running on :${PORT}`)
+  })
+}
+
+module.exports = app

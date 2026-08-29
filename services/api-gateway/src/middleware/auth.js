@@ -1,5 +1,4 @@
 // Middleware d'authentification
-// TODO: remettre dès que le bug est résolu
 
 const jwt = require('jsonwebtoken')
 
