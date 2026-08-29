@@ -29,6 +29,10 @@ jobs:
       - name: Couverture de tests
         working-directory: services/${{ matrix.service }}
         run: npm run test:coverage --if-present
+      - name: Lancer les tests E2E
+        if: matrix.service == 'recrutement'
+        working-directory: services/${{ matrix.service }}
+        run: npm run test:e2e
 
   security:
     runs-on: ubuntu-latest
