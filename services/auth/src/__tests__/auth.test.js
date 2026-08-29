@@ -88,3 +88,25 @@ describe('POST /auth/verify', () => {
     expect(res.body.valid).toBe(false)
   })
 })
+describe('GET /metrics', () => {
+  test('retourne les métriques Prometheus', async () => {
+    const res = await request(app).get('/metrics')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/text\/plain/)
+    expect(res.text).toContain('http_requests_total')
+  })
+})
+
+describe('Démarrage sans JWT_SECRET', () => {
+  test('lève une erreur si JWT_SECRET est absent', () => {
+    jest.resetModules()
+    const originalSecret = process.env.JWT_SECRET
+    delete process.env.JWT_SECRET
+
+    expect(() => {
+      require('../index')
+    }).toThrow('JWT_SECRET manquant')
+
+    process.env.JWT_SECRET = originalSecret
+  })
+})
