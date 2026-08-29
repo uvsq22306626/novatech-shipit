@@ -3,9 +3,9 @@ info:
   title: NovaTech HRFlow — Service Paie
   description: |
     API du microservice de calcul de paie (`services/paie`).
-    Expose le calcul des bulletins de paie, les heures supplémentaires,
-    les métriques Prometheus et une route de migration de schéma protégée.
-  version: 1.0.0
+    Expose le calcul des bulletins de paie, les heures supplémentaires
+    et les métriques Prometheus.
+  version: 1.1.0
   contact:
     name: NovaTech HRFlow
 servers:
@@ -19,8 +19,6 @@ tags:
     description: Health check et métriques
   - name: Paie
     description: Calcul de la paie
-  - name: Administration
-    description: Opérations d'administration protégées
 
 paths:
   /health:
@@ -44,7 +42,7 @@ paths:
     get:
       tags: [Santé]
       summary: Métriques Prometheus
-      description: "Expose les métriques au format texte Prometheus (`prom-client`) : métriques par défaut préfixées `paie_`, plus `http_request_duration_seconds` et `http_requests_total`."
+      description: "Expose les métriques au format texte Prometheus (`prom-client`) : métriques par défaut préfixées `paie_`, `http_request_duration_seconds`, `http_requests_total`, et `paie_virement_echecs_total`."
       operationId: getMetrics
       responses:
         "200":
@@ -64,9 +62,15 @@ paths:
       summary: Calcule le bulletin de paie d'un employé
       description: |
         Calcule le brut, les cotisations salariales/patronales et le net pour un employé,
-        enregistre le bulletin en base (`bulletins_paie`), puis déclenche un virement Stripe
-        (les erreurs Stripe sont journalisées mais n'empêchent pas la réponse).
+        puis déclenche un virement Stripe. Le bulletin est enregistré en base (`bulletins_paie`)
+        que le virement réussisse ou non — son statut est reporté dans `virementStatut` /
+        `virementErreur`, et la réponse HTTP passe à `502` si le virement a échoué.
+
+        Un seul bulletin peut exister par couple `(employeeId, mois, annee)` : un appel
+        répété sur une période déjà calculée renvoie `409` sans redéclencher de virement.
       operationId: calculerPaie
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -79,7 +83,7 @@ paths:
               annee: 2026
       responses:
         "200":
-          description: Bulletin de paie calculé et enregistré.
+          description: Bulletin de paie calculé, enregistré, et virement Stripe réussi.
           content:
             application/json:
               schema:
@@ -92,7 +96,25 @@ paths:
                 cotisationsSalariales: 704
                 cotisationsPatronales: 1344
                 net: 2496
+                virementStatut: reussi
+                virementErreur: null
                 generatedAt: "2026-08-20T09:15:00.000Z"
+        "400":
+          description: "`employeeId`, `mois` ou `annee` invalides."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "mois/annee invalides"
+        "401":
+          description: Token JWT manquant ou invalide.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "No token"
         "404":
           description: Employé introuvable.
           content:
@@ -101,6 +123,19 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Employee not found
+        "409":
+          description: Un bulletin existe déjà pour cette période ; aucun nouveau virement n'est déclenché.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+              example:
+                error: "Bulletin déjà généré pour cette période"
+                bulletin:
+                  employeeId: 42
+                  mois: 8
+                  annee: 2026
+                  net: 2496
         "500":
           description: Erreur serveur (base de données injoignable, requête invalide, etc.).
           content:
@@ -109,6 +144,23 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: "connect ECONNREFUSED 127.0.0.1:5432"
+        "502":
+          description: Bulletin enregistré mais le virement Stripe a échoué (voir `virementErreur`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bulletin"
+              example:
+                employeeId: 42
+                mois: 8
+                annee: 2026
+                brut: 3200
+                cotisationsSalariales: 704
+                cotisationsPatronales: 1344
+                net: 2496
+                virementStatut: echoue
+                virementErreur: "Stripe timeout"
+                generatedAt: "2026-08-20T09:15:00.000Z"
 
   /paie/heures-sup:
     post:
@@ -116,6 +168,8 @@ paths:
       summary: Calcule la majoration pour heures supplémentaires
       description: Calcule le taux horaire à partir du salaire mensuel brut (base 151,67h) et applique une majoration de 25 %.
       operationId: calculerHeuresSup
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -137,6 +191,22 @@ paths:
                 tauxHoraire: 21.1
                 majorationHeuresSup: 263.75
                 total: 263.75
+        "400":
+          description: "`employeeId` ou `heures` invalides."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "heures invalides"
+        "401":
+          description: Token JWT manquant ou invalide.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "No token"
         "404":
           description: Employé introuvable.
           content:
@@ -154,65 +224,15 @@ paths:
               example:
                 error: "connect ECONNREFUSED 127.0.0.1:5432"
 
-  /paie/migrate:
-    post:
-      tags: [Administration]
-      summary: Applique la migration de schéma de la base de paie
-      description: |
-        **Route sensible.** Nécessite `adminKey` égal à la variable d'environnement
-        `MIGRATION_ADMIN_KEY`. Ajoute les colonnes `salaire_variable` (employees) et
-        `periode_reference` (bulletins_paie) si absentes, et met à jour `employees.updated_at`.
-
-        ⚠️ Voir [`runbook-incident-p1.md`](./runbook-incident-p1.md) — l'absence de protection
-        sur cette route est la cause racine de l'incident P1 du 14/15 août 2024. Ne jamais
-        l'exécuter en production sans validation préalable et backup récent.
-      operationId: migrer
-      security:
-        - adminKey: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MigrateRequest"
-            example:
-              adminKey: "********"
-      responses:
-        "200":
-          description: Migration appliquée avec succès.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MigrateResponse"
-              example:
-                success: true
-        "403":
-          description: Clé d'administration manquante ou incorrecte.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Forbidden — admin key required"
-        "500":
-          description: Erreur lors de l'exécution de la migration.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "relation \"employees\" does not exist"
-
 components:
   securitySchemes:
-    adminKey:
-      type: apiKey
-      in: header
-      name: X-Admin-Key
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: |
-        Représentation documentaire du contrôle applicatif : la clé est en réalité
-        transmise dans le corps de la requête JSON (`adminKey`), comparée à
-        `MIGRATION_ADMIN_KEY` côté serveur.
+        Token JWT signé avec le secret partagé (`JWT_SECRET`). Vérifié directement par
+        le service paie (et non plus seulement par l'API Gateway en amont).
 
   schemas:
     HealthResponse:
@@ -231,6 +251,7 @@ components:
       properties:
         employeeId:
           type: integer
+          minimum: 1
           example: 42
         mois:
           type: integer
@@ -239,6 +260,8 @@ components:
           example: 8
         annee:
           type: integer
+          minimum: 2000
+          maximum: 2100
           example: 2026
       required: [employeeId, mois, annee]
 
@@ -274,6 +297,16 @@ components:
           format: float
           description: Brut moins cotisations salariales.
           example: 2496
+        virementStatut:
+          type: string
+          enum: [reussi, echoue]
+          description: Statut du virement Stripe déclenché lors du calcul.
+          example: reussi
+        virementErreur:
+          type: string
+          nullable: true
+          description: Message d'erreur Stripe si `virementStatut` vaut `echoue`, sinon `null`.
+          example: null
         generatedAt:
           type: string
           format: date-time
@@ -286,17 +319,31 @@ components:
         - cotisationsSalariales
         - cotisationsPatronales
         - net
+        - virementStatut
+        - virementErreur
         - generatedAt
+
+    ConflictResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Bulletin déjà généré pour cette période"
+        bulletin:
+          $ref: "#/components/schemas/Bulletin"
+      required: [error, bulletin]
 
     HeuresSupRequest:
       type: object
       properties:
         employeeId:
           type: integer
+          minimum: 1
           example: 42
         heures:
           type: number
           format: float
+          exclusiveMinimum: 0
           example: 10
       required: [employeeId, heures]
 
@@ -322,23 +369,6 @@ components:
           format: float
           example: 263.75
       required: [heures, tauxHoraire, majorationHeuresSup, total]
-
-    MigrateRequest:
-      type: object
-      properties:
-        adminKey:
-          type: string
-          description: Doit correspondre à la variable d'environnement `MIGRATION_ADMIN_KEY`.
-          example: "********"
-      required: [adminKey]
-
-    MigrateResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-      required: [success]
 
     ErrorResponse:
       type: object

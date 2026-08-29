@@ -42,6 +42,7 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgres://${DB_USER:-hrflow}:${DB_PASSWORD:-hrflow_dev_password}@postgres:5432/${DB_NAME:-hrflow}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_dummy}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
     ports:
       - "3002:3002"
     depends_on:

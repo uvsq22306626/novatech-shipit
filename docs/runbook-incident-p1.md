@@ -26,7 +26,7 @@
 
 ### Scénario 1 — Service paie DOWN (type incident P1 août 2024)
 
-**Contexte réel** : le 14/08/2024, une migration `/paie/migrate` lancée manuellement en production sans authentification a corrompu la table `employees`. Aucune alerte n'existait : la panne n'a été détectée que 2h28 plus tard par un appel client. Depuis, `/paie/migrate` est protégée par `MIGRATION_ADMIN_KEY` et le service est monitoré.
+**Contexte réel** : le 14/08/2024, une migration `/paie/migrate` lancée manuellement en production sans authentification a corrompu la table `employees`. Aucune alerte n'existait : la panne n'a été détectée que 2h28 plus tard par un appel client. La route a d'abord été protégée par `MIGRATION_ADMIN_KEY`, puis **retirée définitivement du service** (les colonnes qu'elle ajoutait sont désormais créées directement par le schéma initial, voir `db/init.sql`) ; le service est monitoré depuis.
 
 #### Détection
 - Alerte Prometheus/Alertmanager : **`PaieServiceDown`** (`up{job="paie"} == 0`, `for: 30s`, `severity: p1`)
@@ -61,7 +61,7 @@ aws rds describe-db-instances \
 #### Résolution
 1. Si la cause est un **déploiement récent** (task definition défaillante) → **rollback ECS immédiat** (section 4).
 2. Si la cause est une **migration/corruption de données** :
-   - Ne **jamais** relancer `/paie/migrate` pour "réparer" — c'est le mécanisme qui a causé l'incident d'origine.
+   - La route `/paie/migrate` qui a causé l'incident d'origine a été retirée du service — aucune migration de schéma ne doit être rejouée via une route HTTP applicative pour "réparer" une corruption.
    - Couper l'accès en écriture au service `paie` (`desired_count=0` ou mise en maintenance via l'API Gateway) pour éviter d'aggraver la corruption.
    - Restaurer la table depuis le dernier backup RDS automatisé (voir `terraform/rds.tf` pour la fenêtre de rétention configurée) :
      ```bash
