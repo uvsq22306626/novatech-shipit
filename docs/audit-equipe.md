@@ -62,6 +62,25 @@ Côté Terraform (module jamais réellement déployé — voir point #13, crédi
 | 27 | Documentation OpenAPI/Swagger du service Congés absente | 🟡 Moyenne | services/conges/src/docs/openapi.yaml | ✅ Corrigé |
 | 28 | Aucun scénario E2E Playwright couvrant le parcours Congés | 🟡 Moyenne | services/conges/e2e/ | ✅ Corrigé |
 
-## Recrutement & Documentation (à compléter)
+## Recrutement 
 
-_À compléter par la responsable de ce lot._
+| # | Problème | Sévérité | Fichier | Statut |
+|---|----------|----------|---------|--------|
+| 29 | Absence de validation des champs obligatoires lors de la création d'une candidature | 🟠 Élevée | services/recrutement/src/index.js | ✅ Corrigé |
+| 30 | Absence de contrôle de présence du CV lors de la création d'une candidature | 🟠 Élevée | services/recrutement/src/index.js | ✅ Corrigé |
+| 31 | Gestion insuffisante des erreurs PostgreSQL lors des opérations de création, consultation et mise à jour | 🟠 Élevée | services/recrutement/src/index.js | ✅ Corrigé |
+| 32 | Absence de réponse `404` lorsqu'une candidature n'existe pas lors de la mise à jour du statut | 🟡 Moyenne | services/recrutement/src/index.js | ✅ Corrigé |
+| 33 | Absence de validation du statut lors de la mise à jour d'une candidature | 🟡 Moyenne | services/recrutement/src/index.js | ✅ Corrigé |
+| 34 | Absence de tests automatisés couvrant les cas nominaux et les principaux cas d'erreur du service Recrutement | 🟠 Élevée | services/recrutement/tests/recrutement.test.js | ✅ Corrigé |
+| 35 | Absence de tests E2E couvrant le parcours de recrutement : création, consultation, mise à jour du statut, upload de CV et validation des erreurs | 🟠 Élevée | services/recrutement/e2e/recrutement.e2e.js | ✅ Corrigé |
+| 36 | Service Recrutement non exposé aux outils de monitoring via des endpoints `/health` et `/metrics` | 🟡 Moyenne | services/recrutement/src/index.js | ✅ Corrigé |
+
+## Documentation
+
+| # | Problème | Sévérité | Fichier | Statut |
+|---|----------|----------|---------|--------|
+| 37 | Documentation API insuffisante ou absente pour les microservices | 🟡 Moyenne | services/*/docs/ | ✅ Corrigé (OpenAPI/Swagger ajouté) |
+| 38 | Absence de documentation centralisée permettant d'installer, exécuter et tester le projet | 🟡 Moyenne | README.md | ✅ Corrigé |
+| 39 | Absence de documentation des variables d'environnement nécessaires | 🟡 Moyenne | .env.example | ✅ Corrigé |
+| 40 | Absence de procédure documentée de gestion des incidents et rollback | 🟡 Moyenne | docs/runbook-incident-p1.md | ✅ Corrigé |
+| 41 | Documentation technique insuffisante sur l'architecture, la CI/CD, le déploiement et le monitoring | 🟡 Moyenne | README.md / docs/ | ✅ Corrigé |
