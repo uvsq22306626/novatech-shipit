@@ -30,7 +30,3 @@ resource "random_password" "jwt_secret" {
 resource "aws_secretsmanager_secret" "stripe_key" {
   name = "${var.app_name}/${var.environment}/stripe-secret-key"
 }
-
-resource "aws_secretsmanager_secret" "migration_admin_key" {
-  name = "${var.app_name}/${var.environment}/migration-admin-key"
-}

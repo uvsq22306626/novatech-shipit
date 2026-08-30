@@ -60,6 +60,14 @@ describe('POST /auth/login', () => {
 
     expect(res.status).toBe(401)
   })
+  test('retourne 500 si la base de données échoue', async () => {
+  pool.query.mockRejectedValue(new Error('Connexion DB perdue'))
+  const res = await request(app)
+    .post('/auth/login')
+    .send({ email: 'user@test.com', password: 'quelconque' })
+  expect(res.status).toBe(500)
+  expect(res.body).toHaveProperty('error')
+ })
 })
 
 describe('POST /auth/verify', () => {
@@ -86,5 +94,27 @@ describe('POST /auth/verify', () => {
 
     expect(res.status).toBe(401)
     expect(res.body.valid).toBe(false)
+  })
+})
+describe('GET /metrics', () => {
+  test('retourne les métriques Prometheus', async () => {
+    const res = await request(app).get('/metrics')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/text\/plain/)
+    expect(res.text).toContain('http_requests_total')
+  })
+})
+
+describe('Démarrage sans JWT_SECRET', () => {
+  test('lève une erreur si JWT_SECRET est absent', () => {
+    jest.resetModules()
+    const originalSecret = process.env.JWT_SECRET
+    delete process.env.JWT_SECRET
+
+    expect(() => {
+      require('../index')
+    }).toThrow('JWT_SECRET manquant')
+
+    process.env.JWT_SECRET = originalSecret
   })
 })

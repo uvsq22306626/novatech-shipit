@@ -11,17 +11,31 @@ alerting:
 rule_files:
   - 'alerts.yml'
 
-# Config Prometheus dédiée au déploiement Render : cible uniquement paie
-# (seul service qui expose /metrics pour l'instant). Ne pas confondre avec
-# monitoring/prometheus.yml, utilisé par docker-compose.monitoring.yml en local.
+# Config Prometheus dédiée au déploiement Render : cible les services qui
+# exposent /metrics. Ne pas confondre avec monitoring/prometheus.yml, utilisé
+# par docker-compose.monitoring.yml en local.
 scrape_configs:
   - job_name: 'paie'
     scheme: https
     metrics_path: '/metrics'
     static_configs:
       - targets: ['novatech-shipit-paie-dev-4xk1.onrender.com']
+
+  - job_name: 'auth'
+    scheme: https
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['novatech-shipit-auth-dev-4xk1.onrender.com']
+
   - job_name: 'recrutement'
     scheme: https
     metrics_path: '/metrics'
     static_configs:
       - targets: ['novatech-shipit-recrutement-dev-4xk1.onrender.com']
+      - targets: ['novatech-shipit-recrutement-dev-4xk1.onrender.com']
+
+  - job_name: 'api-gateway'
+    scheme: https
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['novatech-shipit-api-gateway-dev-4xk1.onrender.com']

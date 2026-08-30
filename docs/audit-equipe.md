@@ -28,9 +28,22 @@ Liste priorisée des problèmes identifiés, par domaine.
 | 15 | Pipeline ne se déclenchait pas sur develop (branche de déploiement réelle) | 🔴 Critique | ✅ Corrigé |
 | 16 | Service Auth sans endpoint /metrics ni /health | 🟡 Moyenne | ✅ Corrigé |
 
-## Paie & Infra Terraform (à compléter)
+## Paie & Infra Terraform (Liza)
 
-_À compléter par la responsable de ce lot._
+| # | Problème | Sévérité | Fichier | Statut |
+|---|----------|----------|---------|--------|
+| 17 | Le service paie est exposé publiquement sur Render, sans vérification d'auth dans le service lui-même — seul le gateway vérifie le JWT, donc on peut appeler `/paie/calculer` ou `/paie/migrate` directement en contournant le gateway | 🔴 Critique | services/paie/src/index.js | ✅ Corrigé (vérification JWT ajoutée directement dans le service sur `/paie/calculer` et `/paie/heures-sup`) |
+| 18 | Pas de protection contre les doublons sur `/paie/calculer` : un rejeu (retry, double-clic) recrée un bulletin et redéclenche un virement Stripe pour le même employé/mois | 🔴 Critique | services/paie/src/index.js | ✅ Corrigé (vérification d'un bulletin existant avant calcul, 409 si déjà généré) |
+| 19 | Si le virement Stripe échoue, l'erreur est juste loguée et ignorée — le bulletin reste renvoyé comme "réussi" (200), sans alerte dédiée (seule l'alerte `PaieServiceDown` existe) | 🟠 Élevée | services/paie/src/index.js | ✅ Corrigé (statut `virementStatut`/`virementErreur` dans le bulletin, réponse 502 si échec, métrique `paie_virement_echecs_total` ajoutée) |
+| 20 | La route `/paie/migrate` exécute des `ALTER TABLE` en dur, protégée seulement par une clé statique en dur dans une variable d'env | 🟡 Moyenne | services/paie/src/index.js | ✅ Corrigé (route retirée — colonnes déjà présentes dans `db/init.sql`, non utilisées ailleurs dans le code ; doc OpenAPI et runbook mis à jour) |
+| 21 | Aucune validation des champs reçus (`employeeId`, `mois`, `heures`...) avant de les utiliser dans les calculs | 🟡 Moyenne | services/paie/src/index.js | ✅ Corrigé (validation `employeeId`, `mois`/`annee`, `heures` avant tout calcul, 400 sinon) |
+
+Côté Terraform (module jamais réellement déployé — voir point #13, crédit AWS promis par l'école jamais reçu, d'où le pivot vers Render) :
+
+| # | Problème | Sévérité | Fichier | Statut |
+|---|----------|----------|---------|--------|
+| 22 | La variable `DATABASE_URL` des tâches ECS pointe vers le secret du mot de passe seul, pas vers une vraie chaîne de connexion — si on avait déployé sur AWS, les services n'auraient pas pu se connecter à la base | 🟠 Élevée | terraform/ecs.tf, terraform/secrets.tf | ❌ Non corrigé |
+| 23 | Seul un listener HTTP (port 80) est configuré sur le load balancer, pas de HTTPS/certificat | 🟡 Moyenne | terraform/alb.tf | ❌ Non corrigé |
 
 ## Congés & Feature Flags
 

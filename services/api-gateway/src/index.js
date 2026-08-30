@@ -1,8 +1,39 @@
 const express = require('express')
 const { createProxyMiddleware } = require('http-proxy-middleware')
+const client = require('prom-client')
 const authMiddleware = require('./middleware/auth')
 
 const app = express()
+
+client.collectDefaultMetrics()
+
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Durée des requêtes HTTP en secondes',
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5],
+})
+
+const httpRequestTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Nombre total de requêtes HTTP',
+  labelNames: ['method', 'route', 'status'],
+})
+
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer()
+  res.on('finish', () => {
+    const labels = { method: req.method, route: req.path, status: res.statusCode }
+    end(labels)
+    httpRequestTotal.inc(labels)
+  })
+  next()
+})
+
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', client.register.contentType)
+  res.end(await client.register.metrics())
+})
 
 // CORS ouvert pour le dev — à restreindre en prod (TODO)
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || []
@@ -36,7 +67,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erreur interne du serveur' })
 })
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`API Gateway running on :${PORT}`)
-})
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000
+  app.listen(PORT, () => {
+    console.log(`API Gateway running on :${PORT}`)
+  })
+}
+
+module.exports = app
