@@ -1,14 +1,58 @@
 const express = require('express')
 const { Pool } = require('pg')
 const unleash = require('./config/unleash')
+const swaggerUi = require('swagger-ui-express')
+const YAML = require('yamljs')
+const path = require('path')
+const client = require('prom-client')
 
 const app = express()
 
+const swaggerDocument = YAML.load(
+  path.join(__dirname, 'docs', 'openapi.yaml')
+)
+
+client.collectDefaultMetrics()
+
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Durée des requêtes HTTP en secondes',
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5]
+})
+
+const httpRequestTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Nombre total de requêtes HTTP',
+  labelNames: ['method', 'route', 'status']
+})
+
 app.use(express.json())
+
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer()
+  res.on('finish', () => {
+    const labels = {
+      method: req.method,
+      route: req.path,
+      status: res.statusCode
+    }
+    end(labels)
+    httpRequestTotal.inc(labels)
+  })
+  next()
+})
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 })
+
+// Documentation Swagger
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+)
 
 // Health check
 app.get('/health', (req, res) => {
@@ -16,6 +60,12 @@ app.get('/health', (req, res) => {
     status: 'UP',
     service: 'conges'
   })
+})
+
+// Métriques Prometheus
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', client.register.contentType)
+  res.end(await client.register.metrics())
 })
 
 // Consulter le solde de congés d'un employé
