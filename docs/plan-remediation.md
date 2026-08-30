@@ -54,11 +54,11 @@ _À compléter par la responsable de ce lot._
 
 - **Environnement Unleash reproductible** : ajout d'un `docker-compose.unleash.yml` permettant de lancer localement Unleash et sa base PostgreSQL.
 
-- **Observabilité** : ajout prévu de l'endpoint `/metrics` avec `prom-client` afin que Prometheus puisse collecter les métriques du service Congés et les rendre disponibles dans le dashboard Grafana.
+- **Observabilité** : ajout de l'endpoint `/metrics` avec `prom-client`. Le service Congés expose les métriques HTTP `http_requests_total` et `http_request_duration_seconds`, ainsi que les métriques Node.js par défaut, afin de permettre leur collecte par Prometheus et leur exploitation dans Grafana.
 
-- **Documentation OpenAPI/Swagger** : documentation des endpoints du service Congés à finaliser afin de fournir le contrat d'API demandé dans les livrables.
+- **Documentation OpenAPI/Swagger** : ajout d'une documentation OpenAPI 3.0 pour le service Congés, exposée via Swagger UI sur `/api-docs`. Elle documente les endpoints métier du service ainsi que les endpoints techniques `/health` et `/metrics`.
 
-- **Tests E2E** : participation aux scénarios Playwright du projet à finaliser afin de couvrir le parcours fonctionnel de bout en bout.
+- **Tests E2E** : ajout de 3 scénarios Playwright pour le service Congés couvrant le health check, le rejet d'une demande avec des champs obligatoires manquants et le rejet d'une demande dont la date de fin est antérieure à la date de début. Les 3 scénarios sont validés.
 
 ## Recrutement & Documentation (à compléter)
 

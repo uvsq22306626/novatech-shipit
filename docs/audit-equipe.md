@@ -49,7 +49,7 @@ Côté Terraform (module jamais réellement déployé — voir point #13, crédi
 
 | # | Problème | Sévérité | Fichier | Statut |
 |---|----------|----------|---------|--------|
-| 17| Endpoint de debug `/conges/debug/all` exposant les congés et les données employés sans contrôle d'accès | 🔴 Critique | services/conges/src/index.js | ✅ Corrigé |
+| 17 | Endpoint de debug `/conges/debug/all` exposant les congés et les données employés sans contrôle d'accès | 🔴 Critique | services/conges/src/index.js | ✅ Corrigé |
 | 18 | Absence de gestion des erreurs PostgreSQL pouvant provoquer des erreurs non maîtrisées | 🟠 Élevée | services/conges/src/index.js | ✅ Corrigé |
 | 19 | Absence de validation des champs obligatoires lors de la création d'une demande de congé | 🟠 Élevée | services/conges/src/index.js | ✅ Corrigé |
 | 20 | Absence de validation des dates (dates invalides ou date de fin antérieure à la date de début) | 🟠 Élevée | services/conges/src/index.js | ✅ Corrigé |
@@ -58,10 +58,9 @@ Côté Terraform (module jamais réellement déployé — voir point #13, crédi
 | 23 | Absence de tests automatisés et de mesure de couverture pour le service Congés | 🟠 Élevée | services/conges/tests/ | ✅ Corrigé |
 | 24 | Aucun mécanisme de Feature Flag permettant d'activer/désactiver une fonctionnalité sans redéploiement | 🟡 Moyenne | services/conges/src/config/unleash.js | ✅ Corrigé |
 | 25 | Approbation des congés non pilotable dynamiquement selon la durée de la demande | 🟡 Moyenne | services/conges/src/app.js | ✅ Corrigé |
-| 26 | Service Congés non exposé aux outils de monitoring via un endpoint `/metrics` | 🟡 Moyenne | services/conges/src/app.js | 🚧 En cours |
-| 27 | Documentation OpenAPI/Swagger du service Congés absente | 🟡 Moyenne | docs/ | 🚧 À faire |
-| 28 | Aucun scénario E2E Playwright couvrant le parcours Congés | 🟡 Moyenne | tests/e2e/ | 🚧 À faire |
-
+| 26 | Service Congés non exposé aux outils de monitoring via un endpoint `/metrics` | 🟡 Moyenne | services/conges/src/app.js | ✅ Corrigé |
+| 27 | Documentation OpenAPI/Swagger du service Congés absente | 🟡 Moyenne | services/conges/src/docs/openapi.yaml | ✅ Corrigé |
+| 28 | Aucun scénario E2E Playwright couvrant le parcours Congés | 🟡 Moyenne | services/conges/e2e/ | ✅ Corrigé |
 
 ## Recrutement & Documentation (à compléter)
 
