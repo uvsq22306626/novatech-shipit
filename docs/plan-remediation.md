@@ -69,7 +69,6 @@ Côté Terraform (non déployé, reste à faire avant un éventuel retour vers A
 
 - **Tests E2E** : ajout de 3 scénarios Playwright pour le service Congés couvrant le health check, le rejet d'une demande avec des champs obligatoires manquants et le rejet d'une demande dont la date de fin est antérieure à la date de début. Les 3 scénarios sont validés.
 
-## Recrutement & Documentation (à compléter)
 
 ## Recrutement & Documentation
 
