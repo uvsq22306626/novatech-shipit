@@ -30,3 +30,6 @@ yarn.lock
 # Misc
 *.tmp
 *.swp
+# Playwright
+**/test-results/
+**/playwright-report/
