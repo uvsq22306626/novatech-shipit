@@ -20,9 +20,18 @@
 - **Observabilité** : ajout d'un endpoint `/metrics` (Prometheus) et `/health` sur le service Auth, cohérent avec le reste des services, pour alimenter le dashboard Grafana (golden signals).
 - **Correction du déclencheur CI** : le pipeline ne se déclenchait initialement que sur `main` ; corrigé pour inclure aussi `develop`, la branche réellement utilisée pour le déploiement continu.
 
-## Paie & Infra Terraform (à compléter)
+## Paie & Infra Terraform (Liza)
 
-_À compléter par la responsable de ce lot._
+- **Auth contournable (#17)** : vérification du JWT ajoutée directement dans le service paie sur `/paie/calculer` et `/paie/heures-sup`, pour ne plus dépendre uniquement du gateway (défense en profondeur — le service reste protégé même si on le contourne).
+- **Doublons sur /paie/calculer (#18)** : vérification qu'un bulletin n'existe pas déjà pour l'employé/mois avant calcul, retour 409 sinon — évite qu'un retry ou un double-clic ne recrée un bulletin et ne redéclenche un virement Stripe.
+- **Échec de virement Stripe silencieux (#19)** : ajout d'un statut `virementStatut`/`virementErreur` sur le bulletin, réponse 502 en cas d'échec (au lieu de 200), ajout de la métrique `paie_virement_echecs_total` pour l'alerting.
+- **Route /paie/migrate dangereuse (#20)** : route retirée — les colonnes qu'elle ajoutait via `ALTER TABLE` étaient déjà présentes dans `db/init.sql` et non utilisées ailleurs dans le code ; documentation OpenAPI et runbook mis à jour en conséquence.
+- **Validation des champs (#21)** : ajout de validations sur `employeeId`, `mois`/`annee`, `heures` avant tout calcul, 400 sinon.
+
+Côté Terraform (non déployé, reste à faire avant un éventuel retour vers AWS) :
+
+- **DATABASE_URL incorrecte sur les tâches ECS (#22)** : à corriger dans `terraform/ecs.tf`/`terraform/secrets.tf` — construire la chaîne de connexion complète (host, port, base, utilisateur, mot de passe) plutôt que de pointer uniquement vers le secret du mot de passe. Non bloquant tant que l'infra reste sur Render, mais bloquant en cas de retour vers AWS.
+- **Pas de HTTPS sur le load balancer (#23)** : à ajouter dans `terraform/alb.tf` — listener 443 avec certificat ACM, redirection du port 80 vers le 443. Même remarque : à faire avant tout retour vers AWS.
 
 ## Congés & Feature Flags
 
