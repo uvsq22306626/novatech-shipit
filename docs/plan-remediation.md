@@ -71,4 +71,30 @@ Côté Terraform (non déployé, reste à faire avant un éventuel retour vers A
 
 ## Recrutement & Documentation (à compléter)
 
-_À compléter par la responsable de ce lot._
+## Recrutement & Documentation
+
+- **Validation des candidatures** : ajout d'un contrôle des champs obligatoires (`nom`, `prenom`, `email`, `poste`) avant l'insertion en base, avec retour HTTP `400` en cas de donnée manquante.
+  
+- **Validation des CV** : ajout d'un contrôle de présence du fichier CV avant traitement, avec retour HTTP `400` lorsqu'aucun CV n'est fourni.
+  
+- **Gestion des erreurs PostgreSQL** : ajout de blocs `try/catch` autour des opérations de création, consultation et mise à jour afin de retourner une réponse HTTP `500` contrôlée en cas d'erreur.
+  
+- **Gestion des candidatures inexistantes** : ajout d'un retour HTTP `404` lorsqu'une candidature ciblée pour une mise à jour n'existe pas.
+  
+- **Validation du statut** : ajout d'un contrôle empêchant la mise à jour d'une candidature avec un statut vide.
+  
+- **Tests unitaires** : ajout de tests Jest/Supertest couvrant les principales routes du service Recrutement ainsi que les cas d'erreur liés aux validations, à la base de données et aux candidatures inexistantes.
+  
+- **Tests End-to-End** : ajout de scénarios Playwright couvrant la création d'une candidature, la consultation des candidatures, la mise à jour du statut, l'upload d'un CV et les erreurs de validation.
+  
+- **Tests sans dépendance à PostgreSQL** : ajout du mode `MOCK_DB=true` afin de permettre l'exécution locale des tests dans un environnement contrôlé et reproductible.
+  
+- **Observabilité** : ajout des endpoints `/health` et `/metrics` ainsi que des métriques HTTP `http_requests_total` et `http_request_duration_seconds` avec `prom-client`, afin d'intégrer le service au monitoring Prometheus/Grafana.
+  
+- **Documentation API** : ajout et mise à jour de la documentation OpenAPI/Swagger afin de documenter les endpoints, paramètres et réponses des services.
+  
+- **Documentation projet** : enrichissement du `README.md` avec les instructions d'installation, d'exécution, de test, de CI/CD, de déploiement et de monitoring.
+  
+- **Configuration** : ajout d'un fichier `.env.example` permettant de documenter les variables d'environnement nécessaires sans exposer de secrets.
+  
+- **Gestion des incidents** : ajout d'un runbook documentant les procédures de diagnostic, de correction et de rollback en cas d'incident.
